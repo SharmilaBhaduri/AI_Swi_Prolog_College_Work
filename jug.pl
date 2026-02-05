@@ -1,0 +1,52 @@
+% Goal state: 2 liters in the 4-liter jug
+goal(state(2, _)).
+
+% Possible moves
+move(state(_, Jug3), state(4, Jug3), 'Fill 4-liter jug').        % Fill 4L jug
+move(state(Jug4, _), state(Jug4, 3), 'Fill 3-liter jug').        % Fill 3L jug
+
+move(state(_, Jug3), state(0, Jug3), 'Empty 4-liter jug').       % Empty 4L jug
+move(state(Jug4, _), state(Jug4, 0), 'Empty 3-liter jug').       % Empty 3L jug
+
+move(state(Jug4, Jug3), state(NewJug4, 0), 'Pour 3-liter into 4-liter') :-
+    Total is Jug4 + Jug3,
+    Total =< 4,
+    NewJug4 is Total.
+
+move(state(Jug4, Jug3), state(4, NewJug3), 'Pour 3-liter into 4-liter') :-
+    Total is Jug4 + Jug3,
+    Total > 4,
+    NewJug3 is Total - 4.
+
+move(state(Jug4, Jug3), state(0, NewJug3), 'Pour 4-liter into 3-liter') :-
+    Total is Jug4 + Jug3,
+    Total =< 3,
+    NewJug3 is Total.
+
+move(state(Jug4, Jug3), state(NewJug4, 3), 'Pour 4-liter into 3-liter') :-
+    Total is Jug4 + Jug3,
+    Total > 3,
+    NewJug4 is Total - 3.
+
+% BFS search
+solve :-
+    bfs([[state(0, 0)]], []).
+
+bfs([[State | Path] | _], _) :-
+    goal(State),
+    reverse([State | Path], SolutionPath),
+    write('Solution steps:'), nl,
+    print_path(SolutionPath).
+
+bfs([[State | Path] | Rest], Visited) :-
+    findall([Next, State | Path],
+            (move(State, Next, _), \+ member(Next, [State | Path]), \+ member(Next, Visited)),
+            NewPaths),
+    append(Rest, NewPaths, UpdatedPaths),
+    bfs(UpdatedPaths, [State | Visited]).
+
+% Printing the steps
+print_path([]).
+print_path([state(Jug4, Jug3) | Rest]) :-
+    format("4L jug: ~w, 3L jug: ~w~n", [Jug4, Jug3]),
+    print_path(Rest).
